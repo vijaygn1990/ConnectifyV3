@@ -10,6 +10,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -39,8 +41,10 @@ public class HttpWrapper extends AsyncTask<HttpPost, Void, InputStream> {
         try{
             HttpClient httpclient = new DefaultHttpClient();
             HttpPost httpPost = httppost[0];
-            Log.i(TAG,httpPost.toString());
-            httpPost.setEntity(new UrlEncodedFormEntity(postParameters));
+            Log.i(TAG,httpPost.getURI().toString());
+            if(postParameters!=null) {
+                httpPost.setEntity(new UrlEncodedFormEntity(postParameters));
+            }
             HttpResponse response = httpclient.execute(httpPost);
             HttpEntity entity = response.getEntity();
             is = entity.getContent();
@@ -62,7 +66,13 @@ public class HttpWrapper extends AsyncTask<HttpPost, Void, InputStream> {
         if(result1.contains("Register")) {
             if(result1.contains("Success")) {
                 status = "Success";
-                this.registerActivity.registerResult(status);
+                try {
+                    JSONObject jObj = new JSONObject(result1);
+                    this.registerActivity.setUser_id(jObj.getString("user_id"));
+                    this.registerActivity.registerResult(status);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             } else {
                 status = "Fail";
                 this.registerActivity.registerResult(status);
@@ -76,7 +86,17 @@ public class HttpWrapper extends AsyncTask<HttpPost, Void, InputStream> {
                 this.loginActivity.loginResult(result1);
             }
         } else if(result1.contains("Get interest")) {
-            this.mapActivity.openUserProfile(result1);
+            this.loginActivity.getInterestFromLoginResult(result1);
+        }  else if(result1.contains("Get Location Success")) {
+            this.mapActivity.getUsersLocationResult(result1);
+        } else if(result1.contains("Get other user interest")) {
+            this.mapActivity.getOtherUserInterestResult(result1);
+        } else if(result1.contains("Get Security Questions")) {
+            try {
+                this.userIdForgotPwd.getSecurityQuestions(result1);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -161,5 +181,25 @@ public class HttpWrapper extends AsyncTask<HttpPost, Void, InputStream> {
     public void setMapActivity(MapActivity mapActivity) {
         this.mapActivity = mapActivity;
     }
+
+    public SecurityQuestions getSecurityQuestionsActivity() {
+        return securityQuestionsActivity;
+    }
+
+    public void setSecurityQuestionsActivity(SecurityQuestions securityQuestionsActivity) {
+        this.securityQuestionsActivity = securityQuestionsActivity;
+    }
+
+    private SecurityQuestions securityQuestionsActivity;
+
+    public UserIdForgotPwd getUserIdForgotPwd() {
+        return userIdForgotPwd;
+    }
+
+    public void setUserIdForgotPwd(UserIdForgotPwd userIdForgotPwd) {
+        this.userIdForgotPwd = userIdForgotPwd;
+    }
+
+    private UserIdForgotPwd userIdForgotPwd;
 
 }
